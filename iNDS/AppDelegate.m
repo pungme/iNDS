@@ -292,7 +292,7 @@
 
 - (NSString *)documentsPath
 {
-    return [[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0] stringByAppendingPathComponent:@"iNDS"];
+    return [[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0] stringByAppendingPathComponent:@""];
 }
 
 - (NSString *)oldDocumentsPath //remove later
