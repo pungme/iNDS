@@ -258,10 +258,8 @@
 - (NSString *)documentsPath
 {
     if ([self isSystemApplication]) {
-         NSLog(@"You're System!");
         return [[self rootDocumentsPath] stringByAppendingPathComponent:@"iNDS"];
     } else {
-        NSLog(@"Not System");
         return [self rootDocumentsPath];
     }
 }
@@ -320,7 +318,7 @@
 }
 
 -(BOOL)isSystemApplication {
-    return [[[[NSBundle mainBundle] executablePath] pathComponents][0] isEqualToString:@"applications"];
+    return [[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0] pathComponents].count == 4;
 }
 
 - (void)applicationWillResignActive:(UIApplication *)application
