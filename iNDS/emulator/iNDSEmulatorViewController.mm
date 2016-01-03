@@ -13,6 +13,9 @@
 #import "UIScreen+Widescreen.h"
 #import "iNDSDirectionalControl.h"
 #import "iNDSButtonControl.h"
+#import "CHBgDropboxSync.h"
+#import "UIDevice+Private.h"
+#import "RBVolumeButtons.h"
 
 #import <GLKit/GLKit.h>
 #import <OpenGLES/ES2/gl.h>
@@ -97,6 +100,8 @@ const float textureVert[] =
     BOOL inEditingMode;
     
     UINavigationController * settingsNav;
+    
+    RBVolumeButtons *volumeStealer;
 }
 
 
@@ -139,12 +144,12 @@ const float textureVert[] =
 	
     NSString * currentProfile = [[NSUserDefaults standardUserDefaults] stringForKey:@"currentProfile"];
     iNDSEmulationProfile * profile;
-    if ([currentProfile isEqualToString:@"Default"]) {
-        profile = [[iNDSEmulationProfile alloc] initWithProfileName:@"Default"];
+    if ([currentProfile isEqualToString:@"iNDSDefaultProfile"]) {
+        profile = [[iNDSEmulationProfile alloc] initWithProfileName:@"iNDSDefaultProfile"];
     } else {
         profile = [iNDSEmulationProfile profileWithPath:[iNDSEmulationProfile pathForProfileName:currentProfile]];
         if (!profile) {
-            profile = [[iNDSEmulationProfile alloc] initWithProfileName:@"Default"];
+            profile = [[iNDSEmulationProfile alloc] initWithProfileName:@"iNDSDefaultProfile"];
         }
     }
     [self loadProfile:profile];
@@ -163,30 +168,57 @@ const float textureVert[] =
     if ([[GCController controllers] count] > 0) {
         [self controllerActivated:nil];
     }
+    
+    //Volume Button Bumpers
+    // This works pretty well but there's a 0.5 second delay when
+    // the user holds down a volume button
+    // If we could intercept the actualy event, timing would be a lot more accurate
+    volumeStealer = [[RBVolumeButtons alloc] init];
+    __block CFTimeInterval lastButtonUp = 0;
+    __block CFTimeInterval lastButtonDown = 0;
+    volumeStealer.upBlock = ^{
+        EMU_buttonDown((BUTTON_ID)11); //R
+        lastButtonUp = CACurrentMediaTime();
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC * 0.18), dispatch_get_main_queue(), ^(void){
+            if (CACurrentMediaTime() > lastButtonUp + 0.1) {//Another volume button intercept hasn't fired
+                EMU_buttonUp((BUTTON_ID)11);
+            }
+        });
+    };
+    volumeStealer.downBlock = ^{
+        EMU_buttonDown((BUTTON_ID)10); //L
+        lastButtonDown = CACurrentMediaTime();
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC * 0.18), dispatch_get_main_queue(), ^(void){
+            if (CACurrentMediaTime() > lastButtonDown + 0.1) {
+                EMU_buttonUp((BUTTON_ID)10);
+            }
+        });
+    };
+    
     [self defaultsChanged:nil];
     
     self.speed = 1;
-    
-    self.gameContainer.layer.shadowColor = [UIColor blackColor].CGColor;
-    self.gameContainer.layer.shadowRadius = 5;
-    self.gameContainer.layer.shadowOffset = CGSizeMake(-3, 0);
-    self.gameContainer.layer.shouldRasterize = YES;
-    self.gameContainer.layer.rasterizationScale = UIScreen.mainScreen.scale;
-    self.gameContainer.layer.shadowPath = [UIBezierPath bezierPathWithRect:CGRectMake(0, -10, 10, self.gameContainer.frame.size.height+20)].CGPath;
+
     
     CGRect settingsRect = self.settingsContainer.frame;
-    settingsRect.size.width = MIN(500, self.view.frame.size.width - 70);
-    settingsRect.size.height = MIN(600, self.view.frame.size.height - 140);
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"fullScreenSettings"]) {
+        settingsRect = self.view.frame;
+    } else {
+        settingsRect.size.width = MIN(500, self.view.frame.size.width - 70);
+        settingsRect.size.height = MIN(600, self.view.frame.size.height - 140);
+        self.settingsContainer.layer.cornerRadius = 7;
+    }
     self.settingsContainer.frame = settingsRect;
     self.settingsContainer.center = self.view.center;
     self.settingsContainer.subviews[0].frame = self.settingsContainer.bounds; //Set the inside view
-    self.settingsContainer.layer.cornerRadius = 7;
     
     // ICade
     iCadeReaderView *control = [[iCadeReaderView alloc] initWithFrame:CGRectZero];
     [self.view addSubview:control];
     control.active = YES;
     control.delegate = self;
+    
+    
 }
 
 - (void)viewWillAppear:(BOOL)animated {
@@ -198,39 +230,25 @@ const float textureVert[] =
 - (void)viewWillDisappear:(BOOL)animated {
     [super viewWillDisappear:animated];
     [self pauseEmulation];
-    [self saveStateWithName:@"Pause"];
     [UIApplication sharedApplication].statusBarHidden = NO;
 }
 
 - (void)viewDidAppear:(BOOL)animated
 {
     [super viewDidAppear:animated];
-    [self loadROM];
+    if (!settingsShown)
+        [self loadROM];
     [self defaultsChanged:nil];
-    
-    //NSString * testCheat = @"9208B3F4FFFD0002920CA88000000000021B6ABO00004000D2000000000000009208B3F4FFFE0001920CA88000000000021B6AB000004000D200000000000000";
-    //NSLog(@"Adding Cheat: %@", testCheat);
-    //EMU_add_AR("9208B3F4FFFD0002920CA88000000000021B6ABO00004000D2000000000000009208B3F4FFFE0001920CA88000000000021B6AB000004000D200000000000000", "Big Jump", YES);
-    //EMU_add_AR("03807D40EBAFD8AF", "Master Code", true);
-    //EMU_add_AR("221B6ACD00000000221B6AD100000000221B6AD500000000", "Tiny Mario", YES);
-    //EMU_add_AR("1208b3340000027c2208b32400000003", "Giant Mario", true);
-    /*EMU_addCheat(3, 0x620c2b54, 0x00000000, "Master Code", true);
-    EMU_addCheat(3, 0xb20c2b54, 0x00000000, "A", true);
-    EMU_addCheat(3, 0x1000015c, 0x00000001, "B", true);
-    EMU_addCheat(3, 0x10000160, 0x000003e7, "C", true);
-    EMU_addCheat(3, 0xd2000000, 0x00000000, "D", true);*/
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.0 * NSEC_PER_SEC)), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        //EMU_add_AR("223ce2e10000007f", "MK All Courses", YES);
-        //EMU_add_AR("6217acf800000000b217acf800000000000000bc00002000000000c000002000000000c400002000d200000000000000", "XL", YES);
-    });
     [self.profile ajustLayout];
 }
 
-- (void)changeGame
+- (void)changeGame:(iNDSGame *)newGame
 {
+    NSLog(@"Changing Game");
     [self saveStateWithName:@"Pause"];
     [self pauseEmulation];
     [self shutdownGL];
+    self.game = newGame;
     [self loadROM];
     dispatch_async(dispatch_get_main_queue(), ^{
         [self.profile ajustLayout];
@@ -279,6 +297,11 @@ const float textureVert[] =
     }
     self.directionalControl.style = [defaults integerForKey:@"controlPadStyle"];
     self.fpsLabel.hidden = ![defaults integerForKey:@"showFPS"];
+    if ([defaults integerForKey:@"volumeBumper"]) {
+        [volumeStealer startStealingVolumeButtonEvents];
+    } else {
+        [volumeStealer stopStealingVolumeButtonEvents];
+    }
     
     [self.view setNeedsLayout];
 }
@@ -295,13 +318,20 @@ const float textureVert[] =
     self.controllerContainerView.frame = self.view.frame;
     [self.profile ajustLayout];
     CGRect settingsRect = self.settingsContainer.frame;
-    if ([self isPortrait]) { //Portrait
-        settingsRect.size.width = MIN(500, self.view.frame.size.width - 70);
-        settingsRect.size.height = MIN(600, self.view.frame.size.height - 140);
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"fullScreenSettings"]) {
+        settingsRect = self.view.frame;
+        self.settingsContainer.layer.cornerRadius = 0;
     } else {
-        settingsRect.size.width = MIN(500, self.view.frame.size.width - 70);
-        settingsRect.size.height = MIN(600, self.view.frame.size.height - 60);
+        if ([self isPortrait]) { //Portrait
+            settingsRect.size.width = MIN(500, self.view.frame.size.width - 70);
+            settingsRect.size.height = MIN(600, self.view.frame.size.height - 140);
+        } else {
+            settingsRect.size.width = MIN(500, self.view.frame.size.width - 70);
+            settingsRect.size.height = MIN(600, self.view.frame.size.height - 60);
+        }
+        self.settingsContainer.layer.cornerRadius = 7;
     }
+    
     
     self.settingsContainer.frame = settingsRect;
     self.settingsContainer.center = self.view.center;
@@ -344,8 +374,10 @@ const float textureVert[] =
 #pragma mark - Playing ROM
 
 - (void)loadROM {
+    NSLog(@"Loading ROM %@", self.game.path);
     EMU_setWorkingDir([[self.game.path stringByDeletingLastPathComponent] fileSystemRepresentation]);
     EMU_init([iNDSGame preferredLanguage]);
+    //2 for JIT
     EMU_setCPUMode(1);//[[NSUserDefaults standardUserDefaults] boolForKey:@"enableLightningJIT"] ? 2 : 1);
     EMU_loadRom([self.game.path fileSystemRepresentation]);
     EMU_change3D(1);
@@ -360,6 +392,7 @@ const float textureVert[] =
 
 - (void)initGL
 {
+    NSLog(@"Initiaizing GL");
     self.context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
     [EAGLContext setCurrentContext:self.context];
     
@@ -463,26 +496,21 @@ const float textureVert[] =
 
 - (void)suspendEmulation
 {
-    NSLog(@"Suspending Emulation");
-    EMU_pause(true);
-    [emuLoopLock lock]; // make sure emulator loop has ended
-    [emuLoopLock unlock];
-    [self shutdownGL];
+    NSLog(@"Suspending");
+    [self saveStateWithName:@"Pause"];
+    [self pauseEmulation];
+    // Shutting down while editing a layout causes a ton of problems.
+    // So We'll just not shutdown while editing... :/
+    if (!inEditingMode) { //Discard the changes
+        [self shutdownGL];
+    }
+    
 }
 
 - (void)pauseEmulation
 {
+    NSLog(@"Pausing");
     if (!execute) return;
-    // save snapshot of screen
-    /*if (self.snapshotView == nil) {
-        self.snapshotView = [[UIImageView alloc] initWithFrame:glkView[extWindow?1:0].frame];
-        [self.view insertSubview:self.snapshotView aboveSubview:glkView[extWindow?1:0]];
-    } else {
-        self.snapshotView.hidden = NO;
-    }
-    self.snapshotView.image = [self screenSnapshot:extWindow?1:-1];
-    NSLog(@"%@", self.snapshotView.image);*/
-    // pause emulation
     EMU_pause(true);
     [emuLoopLock lock]; // make sure emulator loop has ended
     [emuLoopLock unlock];
@@ -491,14 +519,18 @@ const float textureVert[] =
 
 - (void)resumeEmulation
 {
+    NSLog(@"Resuming");
     if (self.presentingViewController.presentedViewController != self) return;
-    if (execute || inEditingMode || settingsShown) return;
-    // remove snapshot
-    self.snapshotView.hidden = YES;
+    if (execute) return;
     
-    // resume emulation
-    if (!glkView[0])
+    if (!self.program){
+        NSLog(@"Resuming From Suspend");
         [self initGL];
+        [self.view setNeedsLayout];
+    }
+    
+    if (inEditingMode || settingsShown) return; //Rebuild GL but don't start just yet
+    
     EMU_pause(false);
     //[self.profile ajustLayout];
     [self startEmulatorLoop];
@@ -506,6 +538,9 @@ const float textureVert[] =
 
 - (void)startEmulatorLoop
 {
+    [self.view endEditing:YES];
+    [self updateDisplay]; //This has to be called once before we touch or move any glk views
+    //CGFloat leftOverFrames;
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         lastAutosave = CACurrentMediaTime();
         [emuLoopLock lock];
@@ -518,14 +553,10 @@ const float textureVert[] =
                     EMU_runCore();
                 //}
             }
-            fps = EMU_runOther();
             EMU_copyMasterBuffer();
             [self updateDisplay];
-            if (CACurrentMediaTime() - lastAutosave > 180) {
-                NSString *lastAutosavePath = [self.game pathForSaveStateWithName:@"Auto Save"];
-                if ([[NSFileManager defaultManager] fileExistsAtPath:lastAutosavePath]) {
-                    [[NSFileManager defaultManager] removeItemAtPath:lastAutosavePath error:nil];
-                }
+            fps = EMU_runOther(); // Shouldn't we throttle after updating the display...?
+            if (CACurrentMediaTime() - lastAutosave > 180 && [[NSUserDefaults standardUserDefaults] boolForKey:@"periodicSave"]) {
                 [self saveStateWithName:[NSString stringWithFormat:@"Auto Save"]];
                 lastAutosave = CACurrentMediaTime();
             }
@@ -537,6 +568,10 @@ const float textureVert[] =
 
 - (void)saveStateWithName:(NSString*)saveStateName
 {
+    NSString *savePath = [self.game pathForSaveStateWithName:saveStateName];
+    if ([[NSFileManager defaultManager] fileExistsAtPath:savePath]) {
+        [[NSFileManager defaultManager] removeItemAtPath:savePath error:nil];
+    }
     EMU_saveState([self.game pathForSaveStateWithName:saveStateName].fileSystemRepresentation);
     [self.game reloadSaveStates];
 }
@@ -545,7 +580,7 @@ const float textureVert[] =
 {
     if (texHandle[0] == 0) return;
     dispatch_async(dispatch_get_main_queue(), ^{
-        self.fpsLabel.text = [NSString stringWithFormat:@"%d FPS",fps];
+        self.fpsLabel.text = [NSString stringWithFormat:@"%ld FPS", MIN(fps * self.speed, 60)];
     });
     
     GLubyte *screenBuffer = (GLubyte*)EMU_getVideoBuffer(NULL);
@@ -609,14 +644,6 @@ const float textureVert[] =
 {
     iNDSDirectionalControlDirection state = sender.direction;
     
-    if (state != _previousDirection && state != 0)
-    {
-        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"vibrate"] && ![[NSUserDefaults standardUserDefaults] boolForKey: @"controlPadStyle"])
-        {
-            [self vibrate];
-        }
-    }
-    
     EMU_setDPad(state & iNDSDirectionalControlDirectionUp, state & iNDSDirectionalControlDirectionDown, state & iNDSDirectionalControlDirectionLeft, state & iNDSDirectionalControlDirectionRight);
     
     _previousDirection = state;
@@ -657,15 +684,20 @@ FOUNDATION_EXTERN void AudioServicesPlaySystemSoundWithVibration(unsigned long, 
 
 - (void)vibrate
 {
-    AudioServicesStopSystemSound(kSystemSoundID_Vibrate);
-    
-    NSMutableDictionary *dictionary = [NSMutableDictionary dictionary];
-    NSArray *pattern = @[@YES, @20, @NO, @1];
-    
-    dictionary[@"VibePattern"] = pattern;
-    dictionary[@"Intensity"] = @1;
-    
-    AudioServicesPlaySystemSoundWithVibration(kSystemSoundID_Vibrate, nil, dictionary);
+    // If force touch is avaliable we can assume taptic vibration is too
+    if ([[self.view traitCollection] respondsToSelector:@selector(forceTouchCapability)] && [[self.view traitCollection] forceTouchCapability] == UIForceTouchCapabilityAvailable) {
+        [[[UIDevice currentDevice] tapticEngine] actuateFeedback:UITapticEngineFeedbackPeek];
+    } else {
+        AudioServicesStopSystemSound(kSystemSoundID_Vibrate);
+        
+        NSMutableDictionary *dictionary = [NSMutableDictionary dictionary];
+        NSArray *pattern = @[@YES, @20, @NO, @1];
+        
+        dictionary[@"VibePattern"] = pattern;
+        dictionary[@"Intensity"] = @1;
+        
+        AudioServicesPlaySystemSoundWithVibration(kSystemSoundID_Vibrate, nil, dictionary);
+    }
 }
 
 - (void)touchScreenAtPoint:(CGPoint)point
@@ -676,7 +708,7 @@ FOUNDATION_EXTERN void AudioServicesPlaySystemSoundWithVibration(unsigned long, 
 
 - (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
 {
-    if (settingsShown) {
+    if (settingsShown && !inEditingMode) {
         [self toggleSettings:self];
         return;
     } else if (inEditingMode) { //esture recognizers don't work on glkviews so we need to do it manually
@@ -735,31 +767,43 @@ FOUNDATION_EXTERN void AudioServicesPlaySystemSoundWithVibration(unsigned long, 
 
 - (void)exitEditMode
 {
+    [self.profile exitEditMode];
     inEditingMode = NO;
     settingsShown = YES;
     [self toggleSettings:self];
     [settingsNav popToRootViewControllerAnimated:YES];
-    [self.profile exitEditMode];
+    
 }
 
 - (IBAction)toggleSettings:(id)sender
 {
+    UIView * statusBar = [self statuBarView];
     if (!settingsShown) { //About to show settings
-        
+        if ([[NSUserDefaults standardUserDefaults] boolForKey:@"fullScreenSettings"]) {
+           [[UIApplication sharedApplication] setStatusBarHidden:NO];
+            statusBar.alpha = 0;
+        }
         [self.settingsContainer setHidden:NO];
         [self pauseEmulation];
         [UIView animateWithDuration:0.3 animations:^{
             self.darkenView.hidden = NO;
             self.darkenView.alpha = 0.6;
             self.settingsContainer.alpha = 1;
+            if ([[NSUserDefaults standardUserDefaults] boolForKey:@"fullScreenSettings"]) {
+                statusBar.alpha = 1;
+            }
         } completion:^(BOOL finished) {
             settingsShown = YES;
+            if (!inEditingMode)
+                [CHBgDropboxSync start];
         }];
     } else {
         [UIView animateWithDuration:0.3 animations:^{
             self.darkenView.alpha = 0.0;
             self.settingsContainer.alpha = 0;
+            statusBar.alpha = 0;
         } completion:^(BOOL finished) {
+            [[UIApplication sharedApplication] setStatusBarHidden:YES];
             settingsShown = NO;
             self.settingsContainer.hidden = YES;
             [self resumeEmulation];
@@ -781,6 +825,17 @@ FOUNDATION_EXTERN void AudioServicesPlaySystemSoundWithVibration(unsigned long, 
     }];
     
     
+}
+
+- (UIView *)statuBarView
+{
+    NSString *key = @"statusBar";
+    id object = [UIApplication sharedApplication];
+    UIView *statusBar = nil;
+    if ([object respondsToSelector:NSSelectorFromString(key)]) {
+        statusBar = [object valueForKey:key];
+    }
+    return statusBar;
 }
 
 #pragma mark - Saving
@@ -806,6 +861,7 @@ FOUNDATION_EXTERN void AudioServicesPlaySystemSoundWithVibration(unsigned long, 
 
 - (void)reloadEmulator
 {
+    NSLog(@"Reloading");
     [self pauseEmulation];
     [self shutdownGL];
     [self loadROM];
@@ -883,7 +939,7 @@ FOUNDATION_EXTERN void AudioServicesPlaySystemSoundWithVibration(unsigned long, 
             case iCadeButtonH:
                 [self pressediCadeABXY:0];
                 break;
-                
+
             case iCadeJoystickUp:
                 [self pressediCadePad:0];
                 break;

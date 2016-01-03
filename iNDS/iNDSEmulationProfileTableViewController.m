@@ -22,6 +22,12 @@
     [super viewDidLoad];
     //[self tableView:self.tableView numberOfRowsInSection:0]
     profiles = [iNDSEmulationProfile profilesAtPath:AppDelegate.sharedInstance.batteryDir];
+    UIBarButtonItem * xButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemStop target:AppDelegate.sharedInstance.currentEmulatorViewController action:@selector(toggleSettings:)];
+    xButton.imageInsets = UIEdgeInsetsMake(7, 3, 7, 0);
+    self.navigationItem.rightBarButtonItem = xButton;
+    UITapGestureRecognizer* tapRecon = [[UITapGestureRecognizer alloc] initWithTarget:AppDelegate.sharedInstance.currentEmulatorViewController action:@selector(toggleSettings:)];
+    tapRecon.numberOfTapsRequired = 2;
+    //[self.navigationController.navigationBar addGestureRecognizer:tapRecon];
 }
 
 - (void) viewDidAppear:(BOOL)animated
@@ -44,9 +50,9 @@
             if ([profile deleteProfile]) {
                 profiles = [iNDSEmulationProfile profilesAtPath:AppDelegate.sharedInstance.batteryDir];
                 [self.tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationAutomatic];
-                if ([profile.name isEqualToString:AppDelegate.sharedInstance.currentEmulatorViewController.profile]) { //Just deleted current profile
+                if ([profile.name isEqualToString:AppDelegate.sharedInstance.currentEmulatorViewController.profile.name]) { //Just deleted current profile
                     //Load default
-                    [AppDelegate.sharedInstance.currentEmulatorViewController loadProfile:[[iNDSEmulationProfile alloc] initWithProfileName:@"Default"]];
+                    [AppDelegate.sharedInstance.currentEmulatorViewController loadProfile:[[iNDSEmulationProfile alloc] initWithProfileName:@"iNDSDefaultProfile"]];
                 }
             } else {
                 NSLog(@"Error! unable to delete save state");
@@ -71,6 +77,11 @@
     UITableViewCell* cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:@"Cell"];
     if (indexPath.section == 0) {
         cell.textLabel.text = @"Default";
+        if ([AppDelegate.sharedInstance.currentEmulatorViewController.profile.name isEqualToString:@"iNDSDefaultProfile"]) {
+            cell.accessoryType = UITableViewCellAccessoryCheckmark;
+        } else {
+            cell.accessoryType = UITableViewCellAccessoryNone;
+        }
         //cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
     }
     else if (indexPath.section == 1) {
@@ -91,7 +102,7 @@
 {
     iNDSEmulationProfile * profile;
     if (indexPath.section == 0) {
-        profile = [[iNDSEmulationProfile alloc] initWithProfileName:@"Default"];
+        profile = [[iNDSEmulationProfile alloc] initWithProfileName:@"iNDSDefaultProfile"];
     } else if (indexPath.section == 1) {
         profile = profiles[indexPath.row];
     }

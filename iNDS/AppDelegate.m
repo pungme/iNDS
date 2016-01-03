@@ -30,51 +30,24 @@
 }
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    
-    
+    [Fabric with:@[[Crashlytics class]]];
+    [[Crashlytics sharedInstance] setObjectValue:@"Starting App" forKey:@"GameTitle"];
     [[NSUserDefaults standardUserDefaults] registerDefaults:[NSDictionary dictionaryWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"Defaults" ofType:@"plist"]]];
-    //Create iNDS folder and move old stuff
+    
+    //Create documents folder
     if (![[NSFileManager defaultManager] fileExistsAtPath:self.documentsPath]) {
-        NSError* error;
-        [[NSFileManager defaultManager] createDirectoryAtPath:self.documentsPath withIntermediateDirectories:YES attributes:nil error:&error];
-        if (error) {
-            NSLog(@"Unable to create documents");
-            //[self.alertView showError:[self topMostController] title:@"Error!" subTitle:@"Unable to create iNDS folder in documents" closeButtonTitle:@"OK" duration:0.0];
-        } else {
-            //Move Battery
-            if ([[NSFileManager defaultManager] fileExistsAtPath:self.oldBatteryDir]) {
-                [[NSFileManager defaultManager] moveItemAtPath:self.oldBatteryDir toPath:self.batteryDir error:nil];
-            }
-            //Move Games
-            NSDirectoryEnumerator* enumerator = [[NSFileManager defaultManager] enumeratorAtPath:self.oldDocumentsPath];
-            NSString* file;
-            while (file = [enumerator nextObject])
-            {
-                // check if it's a directory
-                BOOL isDirectory = NO;
-                NSString* fullPath = [self.oldDocumentsPath stringByAppendingPathComponent:file];
-                [[NSFileManager defaultManager] fileExistsAtPath:fullPath
-                                                 isDirectory: &isDirectory];
-                if (!isDirectory)
-                {
-                    if ([fullPath.pathExtension isEqualToString:@"nds"]) {
-                        //NSLog(@"Moving %@", fullPath);
-                        //NSLog(@"TO: %@", [self.documentsPath stringByAppendingPathComponent:file]);
-                        [[NSFileManager defaultManager] moveItemAtPath:fullPath toPath:[self.documentsPath stringByAppendingPathComponent:file] error:&error];
-                        if (error) {
-                            NSLog(@"E: %@", error);
-                        }
-                    }
-                    
-                }
-            }
-        }
+        [[NSFileManager defaultManager] createDirectoryAtPath:self.documentsPath withIntermediateDirectories:YES attributes:nil error:nil];
     }
     
+    // Move iNDS to documents for non-jailbroken phones. Delete later once everyone is >=1.3.3
+    // Helps with itunes drag and drop
+    if ([[NSFileManager defaultManager] fileExistsAtPath:[self.documentsPath stringByAppendingPathComponent:@"iNDS"]]) {
+        [self moveFolderAtPath:[self.documentsPath stringByAppendingPathComponent:@"iNDS"] toPath:self.documentsPath];
+    }
+    
+    
     //Dropbox DBSession Auth
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        [Fabric with:@[[Crashlytics class]]];
-        [[Crashlytics sharedInstance] setObjectValue:@"Starting App" forKey:@"GameTitle"];
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         NSString* errorMsg = nil;
         if ([[self appKey] rangeOfCharacterFromSet:[[NSCharacterSet alphanumericCharacterSet] invertedSet]].location != NSNotFound) {
             errorMsg = @"You must set the App Key correctly for Dropbox to work!";
@@ -95,10 +68,9 @@
         [DBSession setSharedSession:dbSession];
     
         if (errorMsg != nil) {
-            //[self.alertView showError:[self topMostController] title:NSLocalizedString(@"DROPBOX_CFG_ERROR", nil) subTitle:errorMsg closeButtonTitle:@"OK" duration:0.0];
             NSLog(@"%@", errorMsg);
         } else {
-             [CHBgDropboxSync start];
+            [CHBgDropboxSync start];
         }
     });
     
@@ -144,7 +116,7 @@
             if ([fm createDirectoryAtPath:dstDir withIntermediateDirectories:YES attributes:nil error:&err] == NO) {
                 NSLog(@"Could not create directory to expand zip: %@ %@", dstDir, err);
                 [fm removeItemAtURL:url error:NULL];
-                [self showError:@"Unable to extract .zip file."];
+                [self showError:@"Unable to extract archive file."];
                 return NO;
             }
             
@@ -154,7 +126,7 @@
             if ([url.pathExtension.lowercaseString isEqualToString:@"zip"]) {
                 [SSZipArchive unzipFileAtPath:url.path toDestination:dstDir];
             } else if ([url.pathExtension.lowercaseString isEqualToString:@"7z"]) {
-                if (![LZMAExtractor extract7zArchive:url.path tmpDirName:[@"extract" stringByAppendingPathComponent:url.path.lastPathComponent]]) {
+                if (![LZMAExtractor extract7zArchive:url.path tmpDirName:@"extract"]) {
                     NSLog(@"Unable to extract 7z");
                     [self showError:@"Unable to extract .7z file."];
                     return NO;
@@ -178,23 +150,30 @@
             }
             NSLog(@"Searching");
             NSMutableArray * foundItems = [NSMutableArray array];
+            NSError *error;
             // move .iNDS to documents and .dsv to battery
             for (NSString *path in [fm subpathsAtPath:dstDir]) {
                 if ([path.pathExtension.lowercaseString isEqualToString:@"nds"] && ![[path.lastPathComponent substringToIndex:1] isEqualToString:@"."]) {
                     NSLog(@"found ROM in zip: %@", path);
-                    [fm moveItemAtPath:[dstDir stringByAppendingPathComponent:path] toPath:[self.documentsPath stringByAppendingPathComponent:path.lastPathComponent] error:NULL];
+                    [fm moveItemAtPath:[dstDir stringByAppendingPathComponent:path] toPath:[self.documentsPath stringByAppendingPathComponent:path.lastPathComponent] error:&error];
+                    if (error) NSLog(@"%@", error);
                    [foundItems addObject:path.lastPathComponent];
                 } else if ([path.pathExtension.lowercaseString isEqualToString:@"dsv"]) {
                     NSLog(@"found save in zip: %@", path);
-                    [fm moveItemAtPath:[dstDir stringByAppendingPathComponent:path] toPath:[self.batteryDir stringByAppendingPathComponent:path.lastPathComponent] error:NULL];
+                    [fm moveItemAtPath:[dstDir stringByAppendingPathComponent:path] toPath:[self.batteryDir stringByAppendingPathComponent:path.lastPathComponent] error:&error];
+                    if (error) NSLog(@"%@", error);
                     [foundItems addObject:path.lastPathComponent];
                 } else {
-                    NSLog(@"Discarding: %@", path);
-                    [[NSFileManager defaultManager] removeItemAtPath:[dstDir stringByAppendingPathComponent:path] error:NULL];
+                    BOOL isDirectory;
+                    if ([[NSFileManager defaultManager] fileExistsAtPath:[dstDir stringByAppendingPathComponent:path] isDirectory:&isDirectory]) {
+                        if (!isDirectory) {
+                            [[NSFileManager defaultManager] removeItemAtPath:[dstDir stringByAppendingPathComponent:path] error:NULL];
+                        }
+                    }
                 }
             }
             if (foundItems.count == 0) {
-                [self showError:@"No roms or saves found in archive."];
+                [self showError:@"No roms or saves found in archive. Make sure the zip contains a .nds file or a .dsv file"];
             }
             else if (foundItems.count == 1) {
                 [ZAActivityBar showSuccessWithStatus:[NSString stringWithFormat:@"Added: %@", foundItems[0]] duration:3];
@@ -212,7 +191,7 @@
             NSLog(@"%@", url.pathExtension.lowercaseString);
         }
         // remove inbox (shouldn't be needed)
-        [fm removeItemAtPath:[self.oldDocumentsPath stringByAppendingPathComponent:@"Inbox"] error:NULL];
+        [fm removeItemAtPath:[self.rootDocumentsPath stringByAppendingPathComponent:@"Inbox"] error:NULL];
         // Clear temp
         
         return YES;
@@ -244,39 +223,25 @@
 - (void)checkForUpdates
 {
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.0 * NSEC_PER_SEC)), dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        /*NSError * error;
-        NSString *latestVersion = [NSString stringWithContentsOfURL:[NSURL URLWithString:@"http://www.willamlcobb.com/iNDS/latest.txt"] encoding:NSUTF8StringEncoding error:&error];
-        NSLog(@"%@", latestVersion);
-        latestVersion = [latestVersion stringByReplacingOccurrencesOfString:@"\n" withString:@""];
-        NSString *myVersion = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleShortVersionString"];
-        
-        if (!error && [latestVersion compare:myVersion options:NSNumericSearch] == NSOrderedDescending && ![[NSUserDefaults standardUserDefaults] objectForKey:myVersion]) {
-            NSLog(@"Upgrade Needed lastest<%@> mine<%@>", latestVersion, myVersion);
+        //Show Twitter alert
+        if (![[NSUserDefaults standardUserDefaults] objectForKey:@"TwitterAlert"]) {
+            [[NSUserDefaults standardUserDefaults] setInteger:1 forKey:@"TwitterAlert"];
+        } else if ([[NSUserDefaults standardUserDefaults] integerForKey:@"TwitterAlert"] < 5) {
+            [[NSUserDefaults standardUserDefaults] setInteger: [[NSUserDefaults standardUserDefaults] integerForKey:@"TwitterAlert"] + 1 forKey:@"TwitterAlert"];
+        } else if ([[NSUserDefaults standardUserDefaults] integerForKey:@"TwitterAlert"] == 5) {
+            [[NSUserDefaults standardUserDefaults] setInteger:10 forKey:@"TwitterAlert"];
             dispatch_async(dispatch_get_main_queue(), ^{
                 SCLAlertView * alert = [[SCLAlertView alloc] init];
-                [alert showInfo:[self topMostController] title:@"Update" subTitle:[NSString stringWithFormat:@"A newer version of iNDS is now avaliable: %@", latestVersion] closeButtonTitle:@"Thanks!" duration:0.0];
-                [[NSUserDefaults standardUserDefaults] setBool:YES forKey:myVersion];
+                alert.iconTintColor = [UIColor whiteColor];
+                alert.shouldDismissOnTapOutside = YES;
+                [alert addButton:@"Follow" actionBlock:^(void) {
+                    [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"https://twitter.com/miniroo321"]];
+                }];
+                UIImage * twitterImage = [[UIImage imageNamed:@"Twitter.png"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+                [alert showCustom:[self topMostController] image:twitterImage color:[UIColor colorWithRed:85/255.0 green:175/255.0 blue:238/255.0 alpha:1] title:@"Love iNDS?" subTitle:@"Show some love and get updates about the newest emulators by following the developer on Twitter!" closeButtonTitle:@"No, Thanks" duration:0.0];
             });
-        } else {*/
-            //Show Twitter alert
-            if (![[NSUserDefaults standardUserDefaults] objectForKey:@"TwitterAlert"]) {
-                [[NSUserDefaults standardUserDefaults] setInteger:1 forKey:@"TwitterAlert"];
-            } else if ([[NSUserDefaults standardUserDefaults] integerForKey:@"TwitterAlert"] < 5) {
-                [[NSUserDefaults standardUserDefaults] setInteger: [[NSUserDefaults standardUserDefaults] integerForKey:@"TwitterAlert"] + 1 forKey:@"TwitterAlert"];
-            } else if ([[NSUserDefaults standardUserDefaults] integerForKey:@"TwitterAlert"] == 5) {
-                [[NSUserDefaults standardUserDefaults] setInteger:10 forKey:@"TwitterAlert"];
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    SCLAlertView * alert = [[SCLAlertView alloc] init];
-                    alert.iconTintColor = [UIColor whiteColor];
-                    alert.shouldDismissOnTapOutside = YES;
-                    [alert addButton:@"Follow" actionBlock:^(void) {
-                        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"https://twitter.com/miniroo321"]];
-                    }];
-                    UIImage * twitterImage = [[UIImage imageNamed:@"Twitter.png"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-                    [alert showCustom:[self topMostController] image:twitterImage color:[UIColor colorWithRed:85/255.0 green:175/255.0 blue:238/255.0 alpha:1] title:@"Love iNDS?" subTitle:@"Show some love and get updates about the newest emulators by following the developer on Twitter!" closeButtonTitle:@"No, Thanks" duration:0.0];
-                });
-            }
-        //}
+        }
+        
     });
 }
 
@@ -292,17 +257,18 @@
 
 - (NSString *)documentsPath
 {
-    return [[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0] stringByAppendingPathComponent:@""];
+    if ([self isSystemApplication]) {
+         NSLog(@"You're System!");
+        return [[self rootDocumentsPath] stringByAppendingPathComponent:@"iNDS"];
+    } else {
+        NSLog(@"Not System");
+        return [self rootDocumentsPath];
+    }
 }
 
-- (NSString *)oldDocumentsPath //remove later
+- (NSString *)rootDocumentsPath
 {
     return [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0];
-}
-
-- (NSString *)oldBatteryDir
-{
-    return [self.oldDocumentsPath stringByAppendingPathComponent:@"Battery"];
 }
 
 - (NSString *)appKey
@@ -328,10 +294,33 @@
         //[rootViewController doSlideIn:nil];
         [rootViewController presentViewController:emulatorViewController animated:YES completion:nil];
     } else {
-        self.currentEmulatorViewController.game = game;
         self.currentEmulatorViewController.saveState = [game pathForSaveStateAtIndex:savedState];
-        [self.currentEmulatorViewController changeGame];
+        [self.currentEmulatorViewController changeGame:game];
     }
+}
+
+- (void)moveFolderAtPath:(NSString *)oldDirectory toPath:(NSString *)newDirectory
+{
+    NSFileManager *fm = [NSFileManager defaultManager];
+    NSError *error;
+    NSArray *files = [fm contentsOfDirectoryAtPath:oldDirectory error:&error];
+    if (error) NSLog(@"%@", error);
+    for (NSString *file in files) {
+        BOOL isDirectory;
+        if ([fm fileExistsAtPath:[oldDirectory stringByAppendingPathComponent:file] isDirectory:&isDirectory] && isDirectory) {
+            [self moveFolderAtPath:[oldDirectory stringByAppendingPathComponent:file] toPath:[newDirectory stringByAppendingPathComponent:file]];
+        } else {
+            [fm moveItemAtPath:[oldDirectory stringByAppendingPathComponent:file]
+                        toPath:[newDirectory stringByAppendingPathComponent:file]
+                         error:&error];
+            if (error) NSLog(@"%@", error);
+        }
+    }
+    [fm removeItemAtPath:oldDirectory error:nil];
+}
+
+-(BOOL)isSystemApplication {
+    return [[[[NSBundle mainBundle] executablePath] pathComponents][0] isEqualToString:@"applications"];
 }
 
 - (void)applicationWillResignActive:(UIApplication *)application

@@ -22,6 +22,13 @@
     [super viewDidLoad];
     emulationController = [AppDelegate sharedInstance].currentEmulatorViewController;
     self.navigationItem.title = emulationController.profile.name;
+    
+    UIBarButtonItem * xButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemStop target:AppDelegate.sharedInstance.currentEmulatorViewController action:@selector(toggleSettings:)];
+    xButton.imageInsets = UIEdgeInsetsMake(7, 3, 7, 0);
+    self.navigationItem.rightBarButtonItem = xButton;
+    UITapGestureRecognizer* tapRecon = [[UITapGestureRecognizer alloc] initWithTarget:AppDelegate.sharedInstance.currentEmulatorViewController action:@selector(toggleSettings:)];
+    tapRecon.numberOfTapsRequired = 2;
+    //[self.navigationController.navigationBar addGestureRecognizer:tapRecon];
 }
 
 - (void)didReceiveMemoryWarning {
@@ -77,7 +84,7 @@
             [currentProfile saveProfileWithCancel:NO];
         } else if (indexPath.row == 2) {//New
             self.navigationItem.hidesBackButton = YES;
-            iNDSEmulationProfile * defaultProfile = [[iNDSEmulationProfile alloc] initWithProfileName:@"Default"];
+            iNDSEmulationProfile * defaultProfile = [[iNDSEmulationProfile alloc] initWithProfileName:@"iNDSDefaultProfile"];
             [emulationController loadProfile:defaultProfile];
             [emulationController enterEditMode];
             inEditingMode = YES;
@@ -89,14 +96,14 @@
             self.navigationItem.hidesBackButton = NO;
             [emulationController.profile saveProfileWithCancel:NO];
             inEditingMode = NO;
-        } else { //Discare
+        } else { //Discard
             //Just reload from file
             NSString * profilePath = [iNDSEmulationProfile pathForProfileName:currentProfile.name];
             iNDSEmulationProfile * reloadedProfile = [iNDSEmulationProfile profileWithPath:profilePath];
             [emulationController loadProfile:reloadedProfile];
             inEditingMode = NO;
-            [self.navigationController popViewControllerAnimated:YES];
             [emulationController exitEditMode];
+            [self.navigationController popViewControllerAnimated:YES];
         }
         
     }

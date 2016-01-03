@@ -76,7 +76,8 @@
     [UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
     
     dispatch_async(dispatch_get_main_queue(), ^{
-        self.progressLabel.text = [NSString stringWithFormat:@"Opening"];
+        if (self.progressLabel)
+            self.progressLabel.text = [NSString stringWithFormat:@"Opening"];
     });
     NSError * error;
     
@@ -87,6 +88,7 @@
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         [AppDelegate.sharedInstance application:nil openURL:escapedPath sourceApplication:nil annotation:nil];
         [_delegate removeDownload:self];
+        [[NSNotificationCenter defaultCenter] postNotificationName:iNDSGameSaveStatesChangedNotification object:self];
     });
     
 }

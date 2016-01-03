@@ -178,6 +178,9 @@
 		CA7079C91C08FA64005A1B19 /* iNDSInitialViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = CA7079C81C08FA64005A1B19 /* iNDSInitialViewController.m */; };
 		CA7079CB1C08FB47005A1B19 /* AppIcon-Transparent.png in Resources */ = {isa = PBXBuildFile; fileRef = CA7079CA1C08FB47005A1B19 /* AppIcon-Transparent.png */; };
 		CA7079CD1C095147005A1B19 /* toDo.txt in Resources */ = {isa = PBXBuildFile; fileRef = CA7079CC1C095147005A1B19 /* toDo.txt */; };
+		CA8EA13D1C375D870082A3F8 /* UIDevice+Private.m in Sources */ = {isa = PBXBuildFile; fileRef = CA8EA13C1C375D870082A3F8 /* UIDevice+Private.m */; };
+		CA8EA1401C37C3FB0082A3F8 /* RBVolumeButtons.m in Sources */ = {isa = PBXBuildFile; fileRef = CA8EA13F1C37C3FB0082A3F8 /* RBVolumeButtons.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		CA8EA1421C37C42E0082A3F8 /* MediaPlayer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CA8EA1411C37C42E0082A3F8 /* MediaPlayer.framework */; };
 		CA908C051C2356F700B2A864 /* UIImage+ImageEffects.m in Sources */ = {isa = PBXBuildFile; fileRef = CA908BF71C2356F700B2A864 /* UIImage+ImageEffects.m */; };
 		CA908C061C2356F700B2A864 /* SCLAlertView.m in Sources */ = {isa = PBXBuildFile; fileRef = CA908BF91C2356F700B2A864 /* SCLAlertView.m */; };
 		CA908C071C2356F700B2A864 /* SCLButton.m in Sources */ = {isa = PBXBuildFile; fileRef = CA908BFB1C2356F700B2A864 /* SCLButton.m */; };
@@ -197,10 +200,13 @@
 		CABE38451C30BFDF00BE8857 /* NSString+CompareToVersion.m in Sources */ = {isa = PBXBuildFile; fileRef = CABE38441C30BFDE00BE8857 /* NSString+CompareToVersion.m */; };
 		CABE38981C30FA9800BE8857 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = CABE38971C30FA9800BE8857 /* libsqlite3.tbd */; };
 		CABE389B1C30FB2900BE8857 /* iNDSCheatsTableViewController.mm in Sources */ = {isa = PBXBuildFile; fileRef = CABE389A1C30FB2900BE8857 /* iNDSCheatsTableViewController.mm */; };
-		CABE38A41C32201000BE8857 /* cheats.rar in Resources */ = {isa = PBXBuildFile; fileRef = CABE38A31C321F0200BE8857 /* cheats.rar */; };
 		CABE38A81C34460B00BE8857 /* iNDSCheatsFolderTableViewController.mm in Sources */ = {isa = PBXBuildFile; fileRef = CABE38A71C34460B00BE8857 /* iNDSCheatsFolderTableViewController.mm */; };
-		CABE38AC1C344BB000BE8857 /* Folder.png in Resources */ = {isa = PBXBuildFile; fileRef = CABE38AA1C344BB000BE8857 /* Folder.png */; };
-		CABE38AD1C344BB000BE8857 /* Folder@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = CABE38AB1C344BB000BE8857 /* Folder@2x.png */; };
+		CABE38B31C348B1E00BE8857 /* iNDSAddCheatTableViewController.mm in Sources */ = {isa = PBXBuildFile; fileRef = CABE38B21C348B1E00BE8857 /* iNDSAddCheatTableViewController.mm */; };
+		CABE38B61C34921A00BE8857 /* UIViewController+BackButtonHandler.m in Sources */ = {isa = PBXBuildFile; fileRef = CABE38B51C34921A00BE8857 /* UIViewController+BackButtonHandler.m */; };
+		CABE38C21C34B8B800BE8857 /* Folder.png in Resources */ = {isa = PBXBuildFile; fileRef = CABE38C01C34B8B800BE8857 /* Folder.png */; };
+		CABE38C31C34B8B800BE8857 /* Folder@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = CABE38C11C34B8B800BE8857 /* Folder@2x.png */; };
+		CABE38C61C34B8C600BE8857 /* Sync.png in Resources */ = {isa = PBXBuildFile; fileRef = CABE38C41C34B8C600BE8857 /* Sync.png */; };
+		CABE38C71C34B8C600BE8857 /* Sync@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = CABE38C51C34B8C600BE8857 /* Sync@2x.png */; };
 		D31CC8A417927BCB0098FB9C /* CHBgDropboxSync.m in Sources */ = {isa = PBXBuildFile; fileRef = D31CC8A117927BCB0098FB9C /* CHBgDropboxSync.m */; };
 		D31CC8A517927BCB0098FB9C /* DropboxClearer.m in Sources */ = {isa = PBXBuildFile; fileRef = D31CC8A317927BCB0098FB9C /* DropboxClearer.m */; };
 		D31CC8B217927C3B0098FB9C /* ConciseKit.m in Sources */ = {isa = PBXBuildFile; fileRef = D31CC8AB17927C3B0098FB9C /* ConciseKit.m */; };
@@ -559,6 +565,13 @@
 		CA7079C81C08FA64005A1B19 /* iNDSInitialViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = iNDSInitialViewController.m; sourceTree = "<group>"; };
 		CA7079CA1C08FB47005A1B19 /* AppIcon-Transparent.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "AppIcon-Transparent.png"; path = "Resources/required/AppIcon-Transparent.png"; sourceTree = "<group>"; };
 		CA7079CC1C095147005A1B19 /* toDo.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = toDo.txt; sourceTree = "<group>"; };
+		CA8EA13A1C375D860082A3F8 /* UITapticEngine.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UITapticEngine.h; sourceTree = "<group>"; };
+		CA8EA13B1C375D870082A3F8 /* UIDevice+Private.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIDevice+Private.h"; sourceTree = "<group>"; };
+		CA8EA13C1C375D870082A3F8 /* UIDevice+Private.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UIDevice+Private.m"; sourceTree = "<group>"; };
+		CA8EA13E1C37C3FB0082A3F8 /* RBVolumeButtons.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RBVolumeButtons.h; sourceTree = "<group>"; };
+		CA8EA13F1C37C3FB0082A3F8 /* RBVolumeButtons.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RBVolumeButtons.m; sourceTree = "<group>"; };
+		CA8EA1411C37C42E0082A3F8 /* MediaPlayer.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MediaPlayer.framework; path = System/Library/Frameworks/MediaPlayer.framework; sourceTree = SDKROOT; };
+		CA8EA1431C3850D50082A3F8 /* cheats.rar */ = {isa = PBXFileReference; lastKnownFileType = file; name = cheats.rar; path = Resources/cheats/cheats.rar; sourceTree = "<group>"; };
 		CA908BF61C2356F700B2A864 /* UIImage+ImageEffects.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIImage+ImageEffects.h"; sourceTree = "<group>"; };
 		CA908BF71C2356F700B2A864 /* UIImage+ImageEffects.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UIImage+ImageEffects.m"; sourceTree = "<group>"; };
 		CA908BF81C2356F700B2A864 /* SCLAlertView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SCLAlertView.h; sourceTree = "<group>"; };
@@ -592,11 +605,16 @@
 		CABE38971C30FA9800BE8857 /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
 		CABE38991C30FB2900BE8857 /* iNDSCheatsTableViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = iNDSCheatsTableViewController.h; sourceTree = "<group>"; };
 		CABE389A1C30FB2900BE8857 /* iNDSCheatsTableViewController.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = iNDSCheatsTableViewController.mm; sourceTree = "<group>"; };
-		CABE38A31C321F0200BE8857 /* cheats.rar */ = {isa = PBXFileReference; lastKnownFileType = file; path = cheats.rar; sourceTree = "<group>"; };
 		CABE38A61C34460B00BE8857 /* iNDSCheatsFolderTableViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = iNDSCheatsFolderTableViewController.h; sourceTree = "<group>"; };
 		CABE38A71C34460B00BE8857 /* iNDSCheatsFolderTableViewController.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = iNDSCheatsFolderTableViewController.mm; sourceTree = "<group>"; };
-		CABE38AA1C344BB000BE8857 /* Folder.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Folder.png; sourceTree = "<group>"; };
-		CABE38AB1C344BB000BE8857 /* Folder@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Folder@2x.png"; sourceTree = "<group>"; };
+		CABE38B11C348B1E00BE8857 /* iNDSAddCheatTableViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = iNDSAddCheatTableViewController.h; sourceTree = "<group>"; };
+		CABE38B21C348B1E00BE8857 /* iNDSAddCheatTableViewController.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = iNDSAddCheatTableViewController.mm; sourceTree = "<group>"; };
+		CABE38B41C34921A00BE8857 /* UIViewController+BackButtonHandler.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIViewController+BackButtonHandler.h"; sourceTree = "<group>"; };
+		CABE38B51C34921A00BE8857 /* UIViewController+BackButtonHandler.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UIViewController+BackButtonHandler.m"; sourceTree = "<group>"; };
+		CABE38C01C34B8B800BE8857 /* Folder.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Folder.png; sourceTree = "<group>"; };
+		CABE38C11C34B8B800BE8857 /* Folder@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Folder@2x.png"; sourceTree = "<group>"; };
+		CABE38C41C34B8C600BE8857 /* Sync.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Sync.png; sourceTree = "<group>"; };
+		CABE38C51C34B8C600BE8857 /* Sync@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Sync@2x.png"; sourceTree = "<group>"; };
 		D31CC8A017927BCB0098FB9C /* CHBgDropboxSync.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CHBgDropboxSync.h; sourceTree = "<group>"; };
 		D31CC8A117927BCB0098FB9C /* CHBgDropboxSync.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CHBgDropboxSync.m; sourceTree = "<group>"; };
 		D31CC8A217927BCB0098FB9C /* DropboxClearer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DropboxClearer.h; sourceTree = "<group>"; };
@@ -633,12 +651,13 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CA8EA1421C37C42E0082A3F8 /* MediaPlayer.framework in Frameworks */,
+				1A5BAE8117D184AD00BABC01 /* AudioToolbox.framework in Frameworks */,
 				CABE38981C30FA9800BE8857 /* libsqlite3.tbd in Frameworks */,
 				CA908C0F1C235AA000B2A864 /* Accelerate.framework in Frameworks */,
 				CA908C0D1C235A9B00B2A864 /* AVFoundation.framework in Frameworks */,
 				9C4DD2861891E5390075B66C /* GameController.framework in Frameworks */,
 				CA908C181C239D0000B2A864 /* Fabric.framework in Frameworks */,
-				1A5BAE8117D184AD00BABC01 /* AudioToolbox.framework in Frameworks */,
 				D32C39DB178E749C00E6809E /* libc++.dylib in Frameworks */,
 				CA908C191C239D0000B2A864 /* Crashlytics.framework in Frameworks */,
 				D32C39D9178E748000E6809E /* QuartzCore.framework in Frameworks */,
@@ -753,8 +772,8 @@
 		BF9D515517865E1300B5864B /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				CABE38A91C344BA500BE8857 /* Icons */,
-				CABE38A31C321F0200BE8857 /* cheats.rar */,
+				CABE38BF1C34B8B800BE8857 /* Icons */,
+				CA8EA1431C3850D50082A3F8 /* cheats.rar */,
 				CA908C1D1C23B2BE00B2A864 /* Twitter.png */,
 				CA7079CA1C08FB47005A1B19 /* AppIcon-Transparent.png */,
 				D325821017A1D69B0009C84B /* pixelgrid.png */,
@@ -857,6 +876,7 @@
 		BFCFE0F11764FBD3000A70CF /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				CA8EA1411C37C42E0082A3F8 /* MediaPlayer.framework */,
 				CABE38971C30FA9800BE8857 /* libsqlite3.tbd */,
 				CA908C161C239D0000B2A864 /* Fabric.framework */,
 				CA908C171C239D0000B2A864 /* Crashlytics.framework */,
@@ -1306,6 +1326,13 @@
 		CABE38421C30BFC600BE8857 /* Utilities */ = {
 			isa = PBXGroup;
 			children = (
+				CA8EA13A1C375D860082A3F8 /* UITapticEngine.h */,
+				CA8EA13B1C375D870082A3F8 /* UIDevice+Private.h */,
+				CA8EA13C1C375D870082A3F8 /* UIDevice+Private.m */,
+				CA8EA13E1C37C3FB0082A3F8 /* RBVolumeButtons.h */,
+				CA8EA13F1C37C3FB0082A3F8 /* RBVolumeButtons.m */,
+				CABE38B41C34921A00BE8857 /* UIViewController+BackButtonHandler.h */,
+				CABE38B51C34921A00BE8857 /* UIViewController+BackButtonHandler.m */,
 				CABE38431C30BFDE00BE8857 /* NSString+CompareToVersion.h */,
 				CABE38441C30BFDE00BE8857 /* NSString+CompareToVersion.m */,
 			);
@@ -1319,17 +1346,22 @@
 				CABE389A1C30FB2900BE8857 /* iNDSCheatsTableViewController.mm */,
 				CABE38A61C34460B00BE8857 /* iNDSCheatsFolderTableViewController.h */,
 				CABE38A71C34460B00BE8857 /* iNDSCheatsFolderTableViewController.mm */,
+				CABE38B11C348B1E00BE8857 /* iNDSAddCheatTableViewController.h */,
+				CABE38B21C348B1E00BE8857 /* iNDSAddCheatTableViewController.mm */,
 			);
 			name = Cheats;
 			sourceTree = "<group>";
 		};
-		CABE38A91C344BA500BE8857 /* Icons */ = {
+		CABE38BF1C34B8B800BE8857 /* Icons */ = {
 			isa = PBXGroup;
 			children = (
-				CABE38AA1C344BB000BE8857 /* Folder.png */,
-				CABE38AB1C344BB000BE8857 /* Folder@2x.png */,
+				CABE38C41C34B8C600BE8857 /* Sync.png */,
+				CABE38C51C34B8C600BE8857 /* Sync@2x.png */,
+				CABE38C01C34B8B800BE8857 /* Folder.png */,
+				CABE38C11C34B8B800BE8857 /* Folder@2x.png */,
 			);
 			name = Icons;
+			path = Resources/Icons;
 			sourceTree = "<group>";
 		};
 		D31CC89F17927BCB0098FB9C /* Dropbox */ = {
@@ -1451,12 +1483,11 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				CABE38A41C32201000BE8857 /* cheats.rar in Resources */,
 				28DA4A481787FD7F002236A4 /* Select.png in Resources */,
-				CABE38AD1C344BB000BE8857 /* Folder@2x.png in Resources */,
 				28DA4A52178802FB002236A4 /* RTrigger.png in Resources */,
 				28DA4A491787FD7F002236A4 /* Select@2x.png in Resources */,
 				28DA4A4A1787FD7F002236A4 /* Start.png in Resources */,
+				CABE38C31C34B8B800BE8857 /* Folder@2x.png in Resources */,
 				28DA4A4B1787FD7F002236A4 /* Start@2x.png in Resources */,
 				28DA4A51178802FB002236A4 /* LTrigger@2x.png in Resources */,
 				CA031AB01BE951B700EDE98D /* Images.xcassets in Resources */,
@@ -1469,14 +1500,16 @@
 				BF9D516917867F7D00B5864B /* ABXYPad@2x.png in Resources */,
 				28E7A6F51787D8D5003A9C5B /* HideEmulator.png in Resources */,
 				BF9D516A17867F7D00B5864B /* DPad.png in Resources */,
+				CABE38C21C34B8B800BE8857 /* Folder.png in Resources */,
 				28E7A6EE1787D110003A9C5B /* Defaults.plist in Resources */,
 				BF9D516B17867F7D00B5864B /* DPad@2x.png in Resources */,
+				CABE38C71C34B8C600BE8857 /* Sync@2x.png in Resources */,
+				CABE38C61C34B8C600BE8857 /* Sync.png in Resources */,
 				BF9D516C17867F7D00B5864B /* JoystickBackground.png in Resources */,
 				BF9D516D17867F7D00B5864B /* JoystickBackground@2x.png in Resources */,
 				BF9D516E17867F7D00B5864B /* JoystickButton.png in Resources */,
 				BF9D516F17867F7D00B5864B /* JoystickButton@2x.png in Resources */,
 				AE2F3B6018EF7F5A007A4BA0 /* Localizable.strings in Resources */,
-				CABE38AC1C344BB000BE8857 /* Folder.png in Resources */,
 				D3B8BB961794ACEF0061D1D8 /* ZAActivityBar.bundle in Resources */,
 				CA7079CD1C095147005A1B19 /* toDo.txt in Resources */,
 				D325821217A1D69B0009C84B /* pixelgrid.png in Resources */,
@@ -1558,12 +1591,14 @@
 				BFCFE1A017650FB0000A70CF /* saves.cpp in Sources */,
 				8BEA096517872C080060B347 /* iNDSEmulatorSettingsViewController.m in Sources */,
 				8BEA097E17872C5E0060B347 /* main.m in Sources */,
+				CABE38B61C34921A00BE8857 /* UIViewController+BackButtonHandler.m in Sources */,
 				BFCFE1A117650FB0000A70CF /* slot1.cpp in Sources */,
 				BFCFE1A217650FB0000A70CF /* SPU.cpp in Sources */,
 				CA031D201BEBE1EB00EDE98D /* 7zBuf2.c in Sources */,
 				BFCFE1A317650FB0000A70CF /* texcache.cpp in Sources */,
 				BFCFE1A417650FB0000A70CF /* thumb_instructions.cpp in Sources */,
 				CA031CCA1BEBDC4F00EDE98D /* unzip.c in Sources */,
+				CA8EA1401C37C3FB0082A3F8 /* RBVolumeButtons.m in Sources */,
 				BFCFE1A517650FB0000A70CF /* version.cpp in Sources */,
 				BFCFE1A617650FB0000A70CF /* wifi.cpp in Sources */,
 				CA908C051C2356F700B2A864 /* UIImage+ImageEffects.m in Sources */,
@@ -1640,12 +1675,14 @@
 				CA031D271BEBE1EB00EDE98D /* Delta.c in Sources */,
 				BFCFE246176634EE000A70CF /* slot2_piano.cpp in Sources */,
 				BFCFE247176634EE000A70CF /* slot2_rumblepak.cpp in Sources */,
+				CABE38B31C348B1E00BE8857 /* iNDSAddCheatTableViewController.mm in Sources */,
 				CABE38451C30BFDF00BE8857 /* NSString+CompareToVersion.m in Sources */,
 				CA908C091C2356F700B2A864 /* SCLAlertViewStyleKit.m in Sources */,
 				BFCFE26B1766379F000A70CF /* addons.cpp in Sources */,
 				BF9D514317865CD800B5864B /* SndOut.cpp in Sources */,
 				CA031D231BEBE1EB00EDE98D /* 7zIn.c in Sources */,
 				CA031D341BEBE36200EDE98D /* 7zMain.c in Sources */,
+				CA8EA13D1C375D870082A3F8 /* UIDevice+Private.m in Sources */,
 				CA031D221BEBE1EB00EDE98D /* 7zFile.c in Sources */,
 				CA031D331BEBE36200EDE98D /* 7zAlloc.c in Sources */,
 				8B4895C5178CE15D00BA61C3 /* iNDSROMTableViewController.m in Sources */,
@@ -1819,7 +1856,7 @@
 				CODE_SIGN_ENTITLEMENTS = "";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 1.3.0;
+				CURRENT_PROJECT_VERSION = 1.3.2;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SRCROOT)",
@@ -1872,7 +1909,7 @@
 				CODE_SIGN_ENTITLEMENTS = "";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 1.3.0;
+				CURRENT_PROJECT_VERSION = 1.3.2;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SRCROOT)",

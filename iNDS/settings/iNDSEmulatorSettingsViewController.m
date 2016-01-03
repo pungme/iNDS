@@ -33,6 +33,7 @@
 
 @property (weak, nonatomic) IBOutlet UISwitch *showFPSSwitch;
 @property (weak, nonatomic) IBOutlet UISwitch *autoSaveSwitch;
+@property (weak, nonatomic) IBOutlet UISwitch *fullScreenSwitch;
 
 @property (weak, nonatomic) IBOutlet UILabel *synchSoundLabel;
 @property (weak, nonatomic) IBOutlet UISwitch *synchSoundSwitch;
@@ -41,6 +42,7 @@
 
 @property (weak, nonatomic) IBOutlet UILabel *vibrateLabel;
 @property (weak, nonatomic) IBOutlet UISwitch *vibrateSwitch;
+@property (weak, nonatomic) IBOutlet UISwitch *bumperSwitch;
 
 @property (weak, nonatomic) IBOutlet UILabel *dropboxLabel;
 
@@ -114,10 +116,12 @@
     
     self.showFPSSwitch.on = [defaults boolForKey:@"showFPS"];
     self.autoSaveSwitch.on = [defaults boolForKey:@"periodicSave"];
+    self.fullScreenSwitch.on = [defaults boolForKey:@"fullScreenSettings"];
     self.synchSoundSwitch.on = [defaults boolForKey:@"synchSound"];
     
     self.enableJITSwitch.on = [defaults boolForKey:@"enableLightningJIT"];
     self.vibrateSwitch.on = [defaults boolForKey:@"vibrate"];
+    self.bumperSwitch.on = [defaults boolForKey:@"volumeBumper"];
     
     self.dropboxSwitch.on = [defaults boolForKey:@"enableDropbox"];
     self.cellularSwitch.on = [defaults boolForKey:@"enableDropboxCellular"];
@@ -205,6 +209,8 @@
         [defaults setBool:self.synchSoundSwitch.on forKey:@"synchSound"];
     } else if (sender == self.autoSaveSwitch) {
         [defaults setBool:self.autoSaveSwitch.on forKey:@"periodicSave"];
+    } else if (sender == self.fullScreenSwitch) {
+        [defaults setBool:self.fullScreenSwitch.on forKey:@"fullScreenSettings"];
     } else if (sender == self.controlPadStyleControl) {
         [defaults setInteger:self.controlPadStyleControl.selectedSegmentIndex forKey:@"controlPadStyle"];
     } else if (sender == self.controlOpacitySlider) {
@@ -215,6 +221,8 @@
         [defaults setBool:self.enableJITSwitch.on forKey:@"enableLightningJIT"];
     } else if (sender == self.vibrateSwitch) {
         [defaults setBool:self.vibrateSwitch.on forKey:@"vibrate"];
+    } else if (sender == self.bumperSwitch) {
+        [defaults setBool:self.bumperSwitch.on forKey:@"volumeBumper"];
     } else if (sender == self.dropboxSwitch) {//i'll use a better more foolproof method later. <- lol yeah right
         if ([defaults boolForKey:@"enableDropbox"] == false) {
             [[DBSession sharedSession] linkFromController:self];
