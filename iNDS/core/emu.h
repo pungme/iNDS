@@ -38,6 +38,7 @@ bool EMU_loadRom(const char* path);
 void EMU_change3D(int type);
 void EMU_changeSound(int type);
 void EMU_enableSound(bool enable);
+bool EMU_frameSkip(bool force);
 void EMU_setFrameSkip(int skip);
 void EMU_setCPUMode(int cpuMode);
 void EMU_setSynchMode(bool enabled);
@@ -59,7 +60,7 @@ void EMU_buttonDown(BUTTON_ID button);
 void EMU_buttonUp(BUTTON_ID button);
 void EMU_setDPad(bool up, bool down, bool left, bool right);
 void EMU_setABXY(bool a, bool b, bool x, bool y);
-
+void EMU_setFilter(int filter);
 
 const char *EMU_version();
 

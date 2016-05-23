@@ -1519,6 +1519,9 @@ static void execHardware_hblank()
 
 		//BUT! this was removed in order to make glitches in megaman zero collection (mmz 4 1st level) work.
 		//and, it seems that it is no longer necessary in nsmb. perhaps something else fixed it
+		if (!frameSkipper.ShouldSkip2D()) {
+			GPU_swapScreens();
+		}
 	}
 
 
@@ -2146,9 +2149,7 @@ void NDS_exec(s32 nb)
 			switch(CommonSettings.CpuMode)
 			{
 				case 1: arm9arm7 = armInnerLoop<true,true,1>(nds_timer_base,s32next,arm9,arm7); break;
-				case 2: arm9arm7 = armInnerLoop<true,true,2>(nds_timer_base,s32next,arm9,arm7);
-						//arm9arm7 = armInnerLoop<true,false,2>(nds_timer_base,s32next,arm9,arm7);
-						break;
+				case 2: arm9arm7 = armInnerLoop<true,true,2>(nds_timer_base,s32next,arm9,arm7); break;
 				default: arm9arm7 = armInnerLoop<true,true,0>(nds_timer_base,s32next,arm9,arm7); break;
 					
 			}

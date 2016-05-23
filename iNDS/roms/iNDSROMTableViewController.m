@@ -13,10 +13,14 @@
 #import "iNDSGameTableView.h"
 #import "iNDSRomDownloadManager.h"
 #import "SCLAlertView.h"
-#import <Crashlytics/Crashlytics.h>
+#import "MHWDirectoryWatcher.h"
+#import "WCEasySettingsViewController.h"
+#import "WCBuildStoreClient.h"
+#import "SharkfoodMuteSwitchDetector.h"
 
 @interface iNDSROMTableViewController () {
     NSMutableArray * activeDownloads;
+    MHWDirectoryWatcher * docWatchHelper;
 }
 
 @end
@@ -27,29 +31,20 @@
 {
     [super viewDidLoad];
     [[UIApplication sharedApplication] setStatusBarStyle:UIStatusBarStyleLightContent animated:NO];
-    self.navigationItem.title = @"Roms";
-    //self.navigationController.navigationBar.barStyle = UIBarStyleBlack;
-    
-    BOOL isDir;
-    NSFileManager* fm = [NSFileManager defaultManager];
-    
-    if (![fm fileExistsAtPath:AppDelegate.sharedInstance.batteryDir isDirectory:&isDir])
-        [fm createDirectoryAtPath:AppDelegate.sharedInstance.batteryDir withIntermediateDirectories:NO attributes:nil error:nil];
-    
-    // Localize the title
-    romListTitle.title = NSLocalizedString(@"ROM_LIST", nil);
-    
-    // watch for changes in documents folder
-    docWatchHelper = [DocWatchHelper watcherForPath:AppDelegate.sharedInstance.documentsPath];
-    
-    // register for notifications
-    NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
-    [nc addObserver:self selector:@selector(reloadGames:) name:iNDSGameSaveStatesChangedNotification object:nil];
-    [nc addObserver:self selector:@selector(reloadGames:) name:kDocumentChanged object:docWatchHelper];
-    
+    self.navigationItem.title = NSLocalizedString(@"ROM_LIST", nil);
     activeDownloads = [[iNDSRomDownloadManager sharedManager] activeDownloads];
-    
-    [self reloadGames:nil];
+#ifdef DEBUG
+    self.title = @"DEBUG MODE";
+    if (![[NSUserDefaults standardUserDefaults] objectForKey:@"debugAlert"]) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            SCLAlertView * alert = [[SCLAlertView alloc] init];
+            alert.iconTintColor = [UIColor whiteColor];
+            alert.shouldDismissOnTapOutside = YES;
+            [alert showWarning:self title:@"Debug Mode" subTitle:@"Warning you are running iNDS in debug mode which is very slow. Please change the build configuration to Release if you are not planning on debugging." closeButtonTitle:@"Got it" duration:0.0];
+        });
+    }
+#endif
+    [SharkfoodMuteSwitchDetector shared]; //Start detecting
 }
 
 - (void)didReceiveMemoryWarning
@@ -62,23 +57,48 @@
 {
     [super viewWillAppear:animated];
     [[UIApplication sharedApplication] setStatusBarStyle:UIStatusBarStyleLightContent animated:NO];
-    [self.tableView reloadData];
+    [self reloadGames:nil];
 }
 
 - (void)viewDidAppear:(BOOL)animated {
     [super viewWillAppear:animated];
+    [AppDelegate.sharedInstance startBackgroundProcesses];
+    // watch for changes in documents folder
+    docWatchHelper = [MHWDirectoryWatcher directoryWatcherAtPath:AppDelegate.sharedInstance.documentsPath
+                                                        callback:^{
+                                                            [self reloadGames:self];
+                                                        }];
 }
 
 
-- (void)reloadGames:(NSNotification*)aNotification
+- (IBAction)openSettings:(id)sender
 {
-    if (aNotification.object == docWatchHelper) {
+    WCEasySettingsViewController *settingsView = AppDelegate.sharedInstance.settingsViewController;
+    settingsView.title = @"Emulator Settings";
+    
+    UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:settingsView];
+    UIColor *globalTint = [[[UIApplication sharedApplication] delegate] window].tintColor;
+    
+    nav.navigationBar.barTintColor = globalTint;
+    nav.navigationBar.translucent = NO;
+    nav.navigationBar.tintColor = [UIColor whiteColor];
+    [nav.navigationBar setTitleTextAttributes:@{NSForegroundColorAttributeName : [UIColor whiteColor]}];
+    
+    [self presentViewController:nav animated:YES completion:nil];
+}
+
+- (void)reloadGames:(id)sender
+{
+    NSLog(@"Reloading");
+    if (sender == self) {
         // do it later, the file may not be written yet
-        [self performSelector:_cmd withObject:nil afterDelay:2.5];
+        [self performSelector:_cmd withObject:nil afterDelay:1];
     } else  {
         // reload all games
         games = [iNDSGame gamesAtPath:AppDelegate.sharedInstance.documentsPath saveStateDirectoryPath:AppDelegate.sharedInstance.batteryDir];
-        [self.tableView reloadData];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.tableView reloadData];
+        });
     }
 }
 
@@ -93,14 +113,12 @@
 - (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
     if (editingStyle == UITableViewCellEditingStyleDelete) {
         if (indexPath.section == 0) {  // Del game
-            CLS_LOG(@"Removeing Game");
             iNDSGame *game = games[indexPath.row];
             if ([[NSFileManager defaultManager] removeItemAtPath:game.path error:NULL]) {
                 games = [iNDSGame gamesAtPath:AppDelegate.sharedInstance.documentsPath saveStateDirectoryPath:AppDelegate.sharedInstance.batteryDir];
                 [self.tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationAutomatic];
             }
         } else {
-            CLS_LOG(@"Removeing Download");
             if (indexPath.row >= activeDownloads.count) return;
             iNDSRomDownload * download = activeDownloads[indexPath.row];
             [[iNDSRomDownloadManager sharedManager] removeDownload:download];
@@ -168,5 +186,5 @@
 }
 
 
-
 @end
+

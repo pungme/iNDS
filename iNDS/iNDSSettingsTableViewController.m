@@ -9,9 +9,10 @@
 #import "iNDSSettingsTableViewController.h"
 #import "AppDelegate.h"
 #import "iNDSEmulatorViewController.h"
-#import "iNDSEmulatorSettingsViewController.h"
 #import "iNDSEmulationProfile.h"
 #import <QuartzCore/QuartzCore.h>
+#import "WCEasySettingsViewController.h"
+
 @interface iNDSSettingsTableViewController () {
     iNDSEmulatorViewController * emulationController;
     
@@ -112,10 +113,11 @@
 
 - (IBAction)speedChanged:(UISegmentedControl*) control
 {
-    int translation[] = {1, 2, 4};
+    float translation[] = {0.5, 1, 2, 4};
     emulationController.speed = translation[control.selectedSegmentIndex];
     [emulationController toggleSettings:self];
 }
+
 
 #pragma mark - Table view data source
 
@@ -129,8 +131,11 @@
         case 3: //Save State
             [emulationController newSaveState]; //Request that the controller save
             break;
+        case 6:;
+            [self.navigationController pushViewController:AppDelegate.sharedInstance.settingsViewController animated:YES];
+            break;
         case 8: //Reload
-            [emulationController reloadEmulator]; //Request that the controller save
+            [emulationController reloadEmulator];
             break;
         default:
             break;
@@ -143,12 +148,5 @@
     [emulationController toggleSettings:self];
 }
 
-- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender
-{
-    if ([segue.identifier isEqualToString:@"EmulatorSettings"]) {
-        iNDSEmulatorSettingsViewController * vc = segue.destinationViewController;
-        vc.navigationItem.leftBarButtonItems = nil;
-    }
-}
 
 @end

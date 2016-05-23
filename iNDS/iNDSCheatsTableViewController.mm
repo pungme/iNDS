@@ -17,6 +17,12 @@
 #include "emu.h"
 #include "cheatSystem.h"
 
+#ifdef UseRarKit
+    #import <UnrarKit/UnrarKit.h>
+#else
+    #import "LZMAExtractor.h"
+#endif
+
 @interface iNDSCheatsTableViewController () {
     NSString    *currentGameId;
     iNDSEmulatorViewController  *emulationController;
@@ -67,9 +73,25 @@
     if (![[NSFileManager defaultManager] fileExistsAtPath:cheatSavePath]) {
         NSLog(@"Loading DB Cheats");
         dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            NSData *cheatData;
+#ifdef UseRarKit
             NSError *error = nil;
             URKArchive *archive = [[URKArchive alloc] initWithPath:cheatsArchivePath error:&error];
-            NSData *cheatData = [archive extractDataFromFile:@"usrcheat1.xml" progress:nil error:&error];
+            cheatData = [archive extractDataFromFile:@"usrcheat1.xml" progress:nil error:&error];
+#else
+            NSString *cheatsPath = [AppDelegate.sharedInstance.documentsPath stringByAppendingPathComponent:@"cheats.xml"];
+            NSString *archivePath = [[NSBundle mainBundle] pathForResource:@"cheats" ofType:@"7z"];
+            NSString *extractPath = [NSTemporaryDirectory() stringByAppendingPathComponent:@"cheats.xml"];
+            NSFileManager *fm = [NSFileManager defaultManager];
+            if (![fm fileExistsAtPath:cheatsPath]) {
+                if (![LZMAExtractor extract7zArchive:archivePath dirName:NSTemporaryDirectory() preserveDir:YES]) {
+                    NSLog(@"Unable to extract 7z");
+                }
+                [fm moveItemAtPath:extractPath toPath:cheatsPath error:nil];
+            }
+            cheatData = [NSData dataWithContentsOfFile:cheatsPath];
+            NSLog(@"CDL: %ld", cheatData.length);
+#endif
             currentFolder = @"";
             cheatParser = [[NSXMLParser alloc] initWithData:cheatData];
             cheatParser.delegate = self;
@@ -78,7 +100,9 @@
         });
     } else {
         [self indexCheats];
-        [self.tableView reloadData];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.tableView reloadData];
+        });
     }
 }
 
@@ -172,7 +196,10 @@
 - (void)parserDidEndDocument:(NSXMLParser *)parser {
     cheats->save();
     [self indexCheats];
-    [self.tableView reloadData];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self.tableView reloadData];
+    });
+    
 }
 
 #pragma mark - Table view data source

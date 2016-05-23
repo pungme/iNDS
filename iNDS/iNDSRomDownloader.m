@@ -9,6 +9,7 @@
 #import "iNDSRomDownloader.h"
 #import "ZAActivityBar.h"
 #import "iNDSRomDownloadManager.h"
+#import "SCLAlertView.h"
 @interface iNDSRomDownloader()
 {
     IBOutlet UIWebView * webView;
@@ -44,10 +45,10 @@
 - (void)viewDidAppear:(BOOL)animated
 {
     [super viewDidAppear:animated];
+    urlField.text = @"http://www.google.com/search?q=Nintendo+DS+Roms";
     [webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"http://www.google.com/search?q=Nintendo+DS+Roms"]]];
     //[webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"http://10.0.1.20:8000"]]];
     webView.scrollView.delegate = self;
-    urlField.text = @"http://www.google.com/search?q=Nintendo+DS+Roms";
     lastURL = urlField.text;
     [[UIApplication sharedApplication] setStatusBarStyle:UIStatusBarStyleDefault];
 }
@@ -72,8 +73,11 @@
 
 - (BOOL)webView:(UIWebView *)webView shouldStartLoadWithRequest:(NSURLRequest *)request navigationType:(UIWebViewNavigationType)navigationType {
     NSString *fileExtension = request.URL.pathExtension.lowercaseString;
-    if ([fileExtension isEqualToString:@"ds"] || [fileExtension isEqualToString:@"rar"] || [fileExtension isEqualToString:@"zip"] || [fileExtension isEqualToString:@"7z"])
-    {
+#ifdef UseRarKit
+    if ([fileExtension isEqualToString:@"nds"] || [fileExtension isEqualToString:@"rar"] || [fileExtension isEqualToString:@"zip"] || [fileExtension isEqualToString:@"7z"]) {
+#else
+    if ([fileExtension isEqualToString:@"nds"] || [fileExtension isEqualToString:@"zip"] || [fileExtension isEqualToString:@"7z"]) {
+#endif
         NSLog(@"Downloading %@", request.URL);
         lastProgress = 0.0;
         [ZAActivityBar showSuccessWithStatus:[NSString stringWithFormat:@"Downloading started: %@", request.URL.lastPathComponent] duration:5];
@@ -85,6 +89,12 @@
         //[self dismissViewControllerAnimated:YES completion:nil];
         
         return NO;
+    } else if ([fileExtension isEqualToString:@"rar"]) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            SCLAlertView * alertView = [[SCLAlertView alloc] init];
+            alertView.shouldDismissOnTapOutside = YES;
+            [alertView showError:self title:@"Error!" subTitle:@"Rar support has been disabled for iNDS. Support will return in a future update." closeButtonTitle:@"Okay" duration:0.0];
+        });
     } else {
         //NSLog(@"Ignore: %@", request.URL);
     }

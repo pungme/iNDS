@@ -28,7 +28,7 @@
 
 #define LOGI(...) printf(__VA_ARGS__);printf("\n")
 
-CACHE_ALIGN u8 __GPU_screen[4*256*192];
+CACHE_ALIGN u8 __GPU_screen[2][4*256*192];
 
 extern VideoInfo video;
 
@@ -68,13 +68,6 @@ struct MainLoopData
 
 VideoInfo video;
 
-
-void Mic_DeInit(){}
-BOOL Mic_Init(){return true;}
-void Mic_Reset(){}
-u8 Mic_ReadSample(){return 0x99;}
-void mic_savestate(EMUFILE* os){}
-bool mic_loadstate(EMUFILE* is, int size){ return true;}
 
 bool useMmapForRomLoading = false;
 volatile bool execute = true;
@@ -163,7 +156,7 @@ void EMU_init(int lang)
 	LOG("Init sound core\n");
 	SPU_ChangeSoundCore(SNDCORE_COREAUDIO, DESMUME_SAMPLE_RATE*8/60);
 	
-	static const char* nickname = "iNDS"; //TODO: Add firmware cfg in settings
+	static const char* nickname = "iNDS";
 	fw_config.nickname_len = strlen(nickname);
 	for(int i = 0 ; i < fw_config.nickname_len ; ++i)
 		fw_config.nickname[i] = nickname[i];
@@ -175,11 +168,11 @@ void EMU_init(int lang)
 	
 	fw_config.language = lang < 0 ? NDS_FW_LANG_ENG : lang;
 	fw_config.fav_colour = 15;
-	fw_config.birth_month = 1;
-	fw_config.birth_day = 23;
+	fw_config.birth_month = 2;
+	fw_config.birth_day = 17;
 	fw_config.ds_type = NDS_CONSOLE_TYPE_LITE;
     
-	video.setfilter(video.NONE); //figure out why this doesn't seem to work (also add to cfg)
+	video.setfilter(video.NONE);
 	
 	NDS_CreateDummyFirmware(&fw_config);
 	
@@ -191,7 +184,7 @@ void EMU_init(int lang)
 
 void EMU_loadSettings()
 {
-	CommonSettings.num_cores = sysconf( _SC_NPROCESSORS_ONLN );
+    CommonSettings.num_cores = sysconf( _SC_NPROCESSORS_ONLN );
 	LOGI("%i cores detected", CommonSettings.num_cores);
 	CommonSettings.advanced_timing = false;
 	CommonSettings.cheatsDisable = false;
@@ -213,7 +206,7 @@ void EMU_loadSettings()
 	CommonSettings.showGpu.sub = 1;
 	CommonSettings.spu_advanced = false;
 	CommonSettings.advanced_timing = false;
-	CommonSettings.GFX3D_Zelda_Shadow_Depth_Hack = 0;
+	CommonSettings.GFX3D_Zelda_Shadow_Depth_Hack = 1;
 	CommonSettings.wifi.mode = 0;
 	CommonSettings.wifi.infraBridgeAdapter = 0;
     autoframeskipenab = true;
@@ -227,7 +220,7 @@ void EMU_loadSettings()
 	CommonSettings.GFX3D_LineHack = 0;
 	useMmapForRomLoading = true;
 	fw_config.language = 1;
-	enableMicrophone = true; //doesn't do anything yet
+	enableMicrophone = true;
 }
 
 void iNDS_unpause()
@@ -251,13 +244,13 @@ bool doRomLoad(const char* path, const char* logical)
 
 bool EMU_loadRom(const char* path)
 {
+    paused = 0;
 	return doRomLoad(path, path);
 }
 
 bool NDS_Pause(bool showMsg)
 {
-	if(paused) return false;
-    
+	if(paused == 1) return false;
 	emu_halt();
 	paused = TRUE;
 	SPU_Pause(1);
@@ -360,58 +353,31 @@ void iNDS_user()
 		mainLoopData.fpsframecount = 0;
 		mainLoopData.fpsticks = GetTickCount();
 	}
-    
-    //Don't think this is actually does anything
-	return;
-    if(nds.idleFrameCounter==0 || oneSecond)
-	{
-		//calculate a 16 frame arm9 load average
-		for(int cpu=0;cpu<2;cpu++)
-		{
-			int load = 0;
-			//printf("%d: ",cpu);
-			for(int i=0;i<16;i++)
-			{
-				//blend together a few frames to keep low-framerate games from having a jittering load average
-				//(they will tend to work 100% for a frame and then sleep for a while)
-				//4 frames should handle even the slowest of games
-				s32 sample =
-                nds.runCycleCollector[cpu][(i+0+nds.idleFrameCounter)&15]
-				+	nds.runCycleCollector[cpu][(i+1+nds.idleFrameCounter)&15]
-				+	nds.runCycleCollector[cpu][(i+2+nds.idleFrameCounter)&15]
-				+	nds.runCycleCollector[cpu][(i+3+nds.idleFrameCounter)&15];
-				sample /= 4;
-				load = load/8 + sample*7/8;
-			}
-			//printf("\n");
-			load = std::min(100,std::max(0,(int)(load*100/1120380)));
-			//Hud.cpuload[cpu] = load;
-		}
-	}
-    
-	//Hud.cpuloopIterationCount = nds.cpuloopIterationCount;
 }
 
-static void iNDS_throttle(bool allowSleep = true, int forceFrameSkip = -1)
+bool EMU_frameSkip(bool force)
 {
-	int skipRate = (forceFrameSkip < 0) ? frameskiprate : forceFrameSkip;
-	int ffSkipRate = (forceFrameSkip < 0) ? 9 : forceFrameSkip;
-    
+    if (force) {
+        NDS_SkipNextFrame();
+        return true;
+    }
+    bool skipped;
     //Change in skip rate
-	if(lastskiprate != skipRate)
+	if(lastskiprate != frameskiprate)
 	{
-		lastskiprate = skipRate;
+		lastskiprate = frameskiprate;
 		mainLoopData.framestoskip = 0; // otherwise switches to lower frameskip rates will lag behind
 	}
     
     
     //Load a frame
-	if(!mainLoopData.skipnextframe || forceFrameSkip == 0 || frameAdvance || (continuousframeAdvancing && !FastForward))
+	if(!mainLoopData.skipnextframe)
 	{
 		mainLoopData.framesskipped = 0;
         
 		if (mainLoopData.framestoskip > 0)
 			mainLoopData.skipnextframe = 1;
+        skipped = false;
 	}
 	else //Skip
 	{
@@ -425,34 +391,13 @@ static void iNDS_throttle(bool allowSleep = true, int forceFrameSkip = -1)
 		mainLoopData.framesskipped++;
         
 		NDS_SkipNextFrame();
+        skipped = true;
 	}
     
-    if ((/*autoframeskipenab && frameskiprate ||*/ FrameLimit) && allowSleep)
-	{
-		SpeedThrottle();
+    if (mainLoopData.framestoskip < 1) {
+        mainLoopData.framestoskip += frameskiprate;
 	}
     
-	if (autoframeskipenab && frameskiprate)
-	{
-		if(!frameAdvance && !continuousframeAdvancing)
-		{
-			AutoFrameSkip_NextFrame();
-			if (mainLoopData.framestoskip < 1)
-				mainLoopData.framestoskip += AutoFrameSkip_GetSkipAmount(0,skipRate);
-		}
-	}
-	else
-	{
-		if (mainLoopData.framestoskip < 1)
-			mainLoopData.framestoskip += skipRate;
-	}
-    
-	if (frameAdvance && allowSleep)
-	{
-		frameAdvance = false;
-		emu_halt();
-		SPU_Pause(1);
-	}
 	if(execute && emu_paused && !frameAdvance)
 	{
 		// safety net against running out of control in case this ever happens.
@@ -460,6 +405,7 @@ static void iNDS_throttle(bool allowSleep = true, int forceFrameSkip = -1)
 	}
     
 	//ServiceDisplayThreadInvocations();
+    return skipped;
 }
 
 int EMU_runOther()
@@ -467,7 +413,7 @@ int EMU_runOther()
 	if(execute)
 	{
 		iNDS_user();
-		iNDS_throttle();
+		EMU_frameSkip(false);
 		return mainLoopData.fps > 0 ? mainLoopData.fps : 1;
 	}
 	return 1;
@@ -486,12 +432,15 @@ bool EMU_saveState(const char *filename)
 void* EMU_getVideoBuffer(size_t *outSize)
 {
     if (outSize) *outSize = video.size();
-    return video.buffer;
+    //return video.buffer;
+    // Will
+    video.filter();
+    return video.finalBuffer();
 }
 
 void EMU_copyMasterBuffer()
 {
-	video.srcBuffer = (u8*)GPU_screen;
+	video.srcBuffer = GPU_getDisplayBuffer();
 	
 	//convert pixel format to 32bpp for compositing
 	//why do we do this over and over? well, we are compositing to
@@ -501,7 +450,6 @@ void EMU_copyMasterBuffer()
     u32* dest = video.buffer;
     for(int i=0;i<size;++i)
         *dest++ = 0xFF000000 | RGB15TO32_NOALPHA(src[i]);
-	
 }
 
 void EMU_touchScreenTouch(int x, int y)
@@ -529,24 +477,24 @@ void EMU_closeRom()
 	NDS_Reset();
 }
 
-static BOOL _b[] = {0,0,0,0,0,0,0,0,0,0,0,0,0};
-#define all_button _b[0], _b[1], _b[2], _b[3], _b[4], _b[5], _b[6], _b[7], _b[8], _b[9], _b[10], _b[11]
+static BOOL _b[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+#define all_button _b[0], _b[1], _b[2], _b[3], _b[4], _b[5], _b[6], _b[7], _b[8], _b[9], _b[10], _b[11], _b[12], _b[13]
 
 void EMU_setButtons(int l, int r, int up, int down, int left, int right, int a, int b, int x, int y, int start, int select)
 {
-	NDS_setPad(right, left, down, up, select, start, b, a, y, x, l, r, false, false);
+	NDS_setPad(right, left, down, up, select, start, b, a, y, x, l, r, _b[12], _b[13]);
 }
 
 void EMU_buttonDown(BUTTON_ID button)
 {
     _b[button] = true;
-    NDS_setPad(all_button, false, false);
+    NDS_setPad(all_button);
 }
 
 void EMU_buttonUp(BUTTON_ID button)
 {
     _b[button] = false;
-    NDS_setPad(all_button, false, false);
+    NDS_setPad(all_button);
 }
 
 void EMU_setDPad(bool up, bool down, bool left, bool right)
@@ -555,7 +503,7 @@ void EMU_setDPad(bool up, bool down, bool left, bool right)
     _b[BUTTON_DOWN] = !!down;
     _b[BUTTON_LEFT] = !!left;
     _b[BUTTON_RIGHT] = !!right;
-    NDS_setPad(all_button, false, false);
+    NDS_setPad(all_button);
 }
 
 void EMU_setABXY(bool a, bool b, bool x, bool y)
@@ -564,40 +512,13 @@ void EMU_setABXY(bool a, bool b, bool x, bool y)
     _b[BUTTON_B] = !!b;
     _b[BUTTON_X] = !!x;
     _b[BUTTON_Y] = !!y;
-    NDS_setPad(all_button, false, false);
+    NDS_setPad(all_button);
 }
 
-#pragma mark - Cheats
-
-//Will
-/*bool EMU_addCheat(u8 size, u32 address, u32 val, char *description, bool enabled)
+void EMU_setFilter(int filter)
 {
-    if (cheats->add(size, address, val, description, enabled)) {
-        printf("Cheat Added!");
-        return true;
-    } else {
-        printf("Error, unable to add cheat");
-        return false;
-    }
+    video.setfilter(filter);
 }
-
-bool EMU_update(u8 size, u32 address, u32 val, char *description, bool enabled, u32 pos)
-{
-    return false;
-}
-bool EMU_add_AR(const char *code, const char *description, bool enabled)
-{
-    if (cheats->add_AR(code, description, enabled)) {
-        return true;
-    } else {
-        printf("Error, unable to add AR cheat-----------------\n");
-        return false;
-    }
-}
-bool EMU_update_AR(const char *code, const char *description, bool enabled, u32 pos)
-{
-    return false;
-}*/
 
 const char* EMU_version()
 {
